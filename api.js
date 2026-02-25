@@ -1,5 +1,5 @@
 // API Configuration
-const API_BASE_URL = 'https://proj.moj-proj.netcraze.pro';
+const API_BASE_URL = 'https://resedaceous-stephan-addible.ngrok-free.dev';
 const TOKEN_KEY = 'auth_token';
 
 // API Helper Class
