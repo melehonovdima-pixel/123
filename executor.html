@@ -433,14 +433,20 @@ function renderChart(stats) {
     `;
 }
 
-// ===== Загрузка этапов исполнителя =====
+// ===== Загрузка ВСЕХ этапов исполнителя одним запросом =====
 async function loadMyStages() {
     try {
-        allRequests = await api.getMyStages();  // переиспользуем переменную
+        const allStages = await api.getMyStagesAll();
+
+        // Разделяем на активные и завершённые
+        allRequests = allStages.filter(s => s.status !== 'completed');
+        allDoneStages = allStages.filter(s => s.status === 'completed');
+
         renderActiveMini();
         renderCurrentTasks();
-        const active = allRequests.filter(s => s.status !== 'completed');
-        document.getElementById('tasks-count').textContent = `(${active.length})`;
+        renderDoneTasks();
+
+        document.getElementById('tasks-count').textContent = `(${allRequests.length})`;
     } catch (err) { console.error('Ошибка загрузки этапов:', err); }
 }
 
@@ -581,29 +587,10 @@ function showRefreshBadge() {
         { hour: '2-digit', minute: '2-digit' });
 }
 
-// ===== Загрузить всё =====
+// ===== Загрузить всё (2 запроса вместо N+1) =====
 async function loadAll() {
-    await Promise.all([loadStats(), loadMyStages(), loadDoneStages()]);
-}
-
-// Загружаем завершённые этапы отдельным запросом через заявки
-async function loadDoneStages() {
-    try {
-        // Получаем все заявки исполнителя и вытаскиваем завершённые этапы
-        const requests = await api.getRequests();
-        allDoneStages = [];
-        for (const r of requests) {
-            const stages = await api.getRequestStages(r.id);
-            const done = stages
-                .filter(s => s.status === 'completed')
-                .map(s => ({ ...s, request: r }));
-            allDoneStages.push(...done);
-        }
-        allDoneStages.sort((a, b) =>
-            new Date(b.completed_at) - new Date(a.completed_at)
-        );
-        renderDoneTasks();
-    } catch (e) { console.error('Ошибка загрузки завершённых:', e); }
+    await Promise.all([loadStats(), loadMyStages()]);
+    showRefreshBadge();
 }
 
 // ===== Профиль =====
@@ -639,9 +626,9 @@ async function saveProfile() {
     } catch (e) { alert('Ошибка сохранения: ' + e.message); }
 }
 
-// ===== Автообновление каждые 30 сек =====
+// ===== Автообновление каждые 60 сек =====
 function startAutoRefresh() {
-    refreshInterval = setInterval(loadAll, 30000);
+    refreshInterval = setInterval(loadAll, 60000);
 }
 
 function logout() {

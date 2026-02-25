@@ -163,6 +163,10 @@ async getMyStages() {
     return this.request('/api/stages/my');
 }
 
+async getMyStagesAll() {
+    return this.request('/api/stages/my/all');
+}
+
 async getRequestStages(requestId) {
     return this.request(`/api/requests/${requestId}/stages`);
 }

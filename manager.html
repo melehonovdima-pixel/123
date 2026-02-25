@@ -572,7 +572,6 @@ function overdueCard(r) {
         </div>
         <div class="overdue-card-meta">
             <span>👤 ${r.client?.fullname || '—'}</span>
-            <span>🔧 ${r.executor ? r.executor.fullname : '⚠ Не назначен'}</span>
             <span>📌 ${statusLabel(r.status)}</span>
         </div>
         <div class="overdue-card-desc">${r.description.substring(0, 100)}${r.description.length > 100 ? '…' : ''}</div>
@@ -880,7 +879,7 @@ async function loadAll() {
 
 // ===== Автообновление =====
 function startAutoRefresh() {
-    refreshInterval = setInterval(loadAll, 30000);
+    refreshInterval = setInterval(loadAll, 60000);
 }
 
 function logout() {
