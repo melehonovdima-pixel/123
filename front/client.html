@@ -1,0 +1,499 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Личный кабинет клиента</title>
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Arial', sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        
+        .header {
+            background: #97d0f7;
+            color: white;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+        }
+        
+        .user-info {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .menu {
+            background: white;
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        
+        .menu button {
+            background: #3498db;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 5px;
+            margin-right: 10px;
+            cursor: pointer;
+        }
+        
+        .menu button:hover {
+            background: #acd9f7;
+        }
+        
+        .btn-logout {
+            background: #f6aca3 !important;
+        }
+        
+        .section {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        
+        .hidden {
+            display: none;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        
+        th {
+            background: #ecf0f1;
+            padding: 12px;
+            text-align: left;
+        }
+        
+        td {
+            padding: 10px;
+            border-bottom: 1px solid #eee;
+        }
+        
+        .status {
+            padding: 5px 10px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: bold;
+        }
+        
+        .status-new { background: #ffeaa7; color: #d35400; }
+        .status-assigned, .status-in_progress { background: #81ecec; color: #0984e3; }
+        .status-completed { background: #55efc4; color: #00b894; }
+        
+        input, select, textarea {
+            width: 100%;
+            padding: 10px;
+            margin: 10px 0;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        
+        .profile-info {
+            font-size: 16px;
+        }
+        
+        .profile-info p {
+            margin: 10px 0;
+            padding: 10px;
+            background: #f8f9fa;
+            border-radius: 5px;
+        }
+        
+        .user-role {
+            display: inline-block;
+            padding: 3px 8px;
+            background: #3498db;
+            color: white;
+            border-radius: 4px;
+            font-size: 12px;
+            margin-left: 10px;
+        }
+        
+        button {
+            background: #3498db;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+        
+        button:hover {
+            background: #2980b9;
+        }
+
+        /* Таймлайн этапов */
+        .timeline { position: relative; padding-left: 28px; margin-top: 15px; }
+        .timeline::before {
+             content: ''; position: absolute; left: 10px; top: 0; bottom: 0;
+            width: 2px; background: #ddd;
+        }
+        .tl-item { position: relative; margin-bottom: 20px; }
+        .tl-dot {
+            position: absolute; left: -22px; top: 3px;
+            width: 14px; height: 14px; border-radius: 50%;
+            border: 2px solid #ddd; background: white;
+        }
+        .tl-dot.done    { background: #00b894; border-color: #00b894; }
+        .tl-dot.active  { background: #3498db; border-color: #3498db;
+                   box-shadow: 0 0 0 3px rgba(52,152,219,0.3); }
+        .tl-dot.pending { background: #ddd; border-color: #ddd; }
+
+        .tl-title   { font-weight: 700; font-size: 14px; color: #2c3e50; }
+        .tl-meta    { font-size: 12px; color: #7f8c8d; margin-top: 3px; }
+        .tl-time    { font-size: 12px; color: #00b894; margin-top: 2px; font-weight: 600; }
+
+/* Модальное окно хода заявки */
+        .progress-modal {
+            display: none; position: fixed; inset: 0;
+            background: rgba(0,0,0,0.5); z-index: 1000; overflow-y: auto;
+        }
+        .progress-modal-inner {
+            background: white; max-width: 520px; margin: 40px auto;
+            border-radius: 12px; padding: 24px; position: relative;
+        }
+    </style>
+</head>
+
+
+
+
+<body>
+    <!-- Модалка прогресса заявки -->
+<div id="progress-modal" class="progress-modal">
+    <div class="progress-modal-inner">
+        <button onclick="closeProgressModal()"
+                style="position:absolute;top:12px;right:12px;background:#e74c3c;
+                       width:30px;height:30px;border-radius:50%;font-size:16px;
+                       padding:0;line-height:1;">✕</button>
+        <h3 id="pm-title" style="margin:0 0 5px;color:#2c3e50;">Заявка #—</h3>
+        <p id="pm-desc"   style="background:#f8f9fa;padding:10px;border-radius:6px;
+                                  font-size:13px;margin-bottom:5px;"></p>
+        <p id="pm-status" style="font-size:13px;color:#7f8c8d;margin-bottom:15px;"></p>
+        <h4 style="margin:0 0 10px;color:#2c3e50;">Ход выполнения</h4>
+        <div id="pm-timeline" class="timeline">
+            <div class="empty-state">Загрузка...</div>
+        </div>
+    </div>
+</div>
+    <div class="header">
+        <div class="user-info">
+            <div>
+                <h2>Личный кабинет клиента</h2>
+                <p id="current-user-info">Загрузка...</p>
+            </div>
+            <button class="btn-logout" onclick="logout()">Выйти</button>
+        </div>
+    </div>
+    
+    <div class="menu">
+        <button onclick="showSection('my-requests')">Мои заявки</button>
+        <button onclick="showSection('new-request')">Новая заявка</button>
+        <button onclick="showSection('profile')">Мой профиль</button>
+    </div>
+    
+    <!-- Секция "Мои заявки" -->
+    <div id="my-requests" class="section">
+        <h3>Мои заявки</h3>
+        <table>
+            <thead>
+                <tr>
+                    <th>№</th>
+                    <th>Дата</th>
+                    <th>Тип проблемы</th>
+                    <th>Описание</th>
+                    <th>Статус</th>
+                    <th>Исполнитель</th>
+                </tr>
+            </thead>
+            <tbody id="requests-table">
+                <!-- Заявки загружаются через JavaScript -->
+            </tbody>
+        </table>
+    </div>
+    
+    <!-- Секция "Новая заявка" -->
+    <div id="new-request" class="section hidden">
+        <h3>Создание новой заявки</h3>
+        <div>
+            <label>Тип проблемы:</label>
+            <select id="problem-type">
+                <option value="">Выберите тип (необязательно)</option>
+                <option value="plumbing">Сантехника</option>
+                <option value="electricity">Электрика</option>
+                <option value="elevator">Лифт</option>
+                <option value="cleaning">Уборка</option>
+                <option value="heating">Отопление</option>
+                <option value="other">Другое</option>
+            </select>
+
+            
+            <label>Описание:</label>
+            <textarea id="problem-description" rows="4" placeholder="Опишите проблему подробно..."></textarea>
+            
+            <button onclick="createRequest()">Отправить заявку</button>
+        </div>
+    </div>
+    
+    <!-- Секция "Профиль" -->
+    <div id="profile" class="section hidden">
+        <h3>Мой профиль</h3>
+        <div class="profile-info">
+            <p><strong>ФИО:</strong> <span id="profile-fullname"></span></p>
+            <p><strong>Телефон:</strong> <span id="profile-phone"></span></p>
+            <p><strong>Адрес:</strong> <span id="profile-address"></span></p>
+            <p><strong>Роль в системе:</strong> <span id="profile-role"></span> <span id="profile-role-badge" class="user-role"></span></p>
+            <p><strong>Дата регистрации:</strong> <span id="profile-regdate"></span></p>
+            <p><strong>Статус:</strong> <span id="profile-status"></span></p>
+        </div>
+    </div>
+
+    <script src="api.js"></script>
+    <script>
+
+        const STATUS_LABELS = {
+    new:         'Новая',
+    in_progress: 'В работе',
+    completed:   'Завершена',
+    cancelled:   'Отменена'
+};
+
+        // Проверка авторизации
+    
+        async function checkAuth() {
+            if (!api.getToken()) {
+                window.location.href = 'index.html';
+                return false;
+            }
+            
+            try {
+                const user = await api.getCurrentUser();
+                if (user.role !== 'client') {
+                    window.location.href = 'index.html';
+                    return false;
+                }
+                return true;
+            } catch (error) {
+                window.location.href = 'index.html';
+                return false;
+            }
+        }
+        
+        // Загрузка данных пользователя
+        async function loadUserData() {
+            try {
+                const currentUser = await api.getCurrentUser();
+                
+                document.getElementById('current-user-info').innerHTML = `
+                    ${currentUser.fullname} <span class="user-role">${getRoleName(currentUser.role)}</span><br>
+                    ${currentUser.address || ''}
+                `;
+                
+                document.getElementById('profile-fullname').textContent = currentUser.fullname;
+                document.getElementById('profile-phone').textContent = currentUser.username;
+                document.getElementById('profile-address').textContent = currentUser.address || '';
+                document.getElementById('profile-role').textContent = getRoleName(currentUser.role);
+                document.getElementById('profile-role-badge').textContent = currentUser.role;
+                document.getElementById('profile-regdate').textContent = 
+                    new Date(currentUser.created_at).toLocaleDateString();
+                document.getElementById('profile-status').textContent = currentUser.is_active ? 'Активен ✓' : 'Заблокирован ✗';
+                
+                await loadUserRequests();
+            } catch (error) {
+                console.error('Error loading user data:', error);
+                window.location.href = 'index.html';
+            }
+        }
+        
+        // Загрузка заявок пользователя
+        async function loadUserRequests() {
+            try {
+                const requests = await api.getRequests();
+                const tableBody = document.getElementById('requests-table');
+                tableBody.innerHTML = '';
+                
+                if (requests.length === 0) {
+                    tableBody.innerHTML = `
+                        <tr>
+                            <td colspan="6" style="text-align: center; padding: 20px;">
+                                У вас пока нет заявок. Создайте первую!
+                            </td>
+                        </tr>
+                    `;
+                    return;
+                }
+                
+                requests.forEach(request => {
+                    const row = document.createElement('tr');
+                    const shortDesc = request.description.replace(/`/g, '').substring(0, 80);
+row.innerHTML = `
+    <td>
+        <a href="#" onclick="openProgress(${request.id}, \`${shortDesc}\`, '${request.status}'); return false;"
+           style="font-weight:700; color:#2980b9; text-decoration:none;">
+            #${request.id}
+        </a>
+    </td>
+    <td>${new Date(request.created_at).toLocaleDateString('ru-RU')}</td>
+    <td>${getProblemTypeName(request.type)}</td>
+    <td>${request.description.substring(0, 60)}${request.description.length > 60 ? '…' : ''}</td>
+    <td><span class="status status-${request.status}">${getStatusName(request.status)}</span></td>
+    <td>—</td>
+`;
+
+                    tableBody.appendChild(row);
+                });
+            } catch (error) {
+                console.error('Error loading requests:', error);
+            }
+        }
+        
+        // Создание новой заявки
+async function createRequest() {
+    const type        = document.getElementById('problem-type').value;
+    const description = document.getElementById('problem-description').value.trim();
+
+    if (!description) {          // ← только описание обязательно
+        alert('Введите описание проблемы!');
+        return;
+    }
+    try {
+        const newRequest = await api.createRequest(type || null, description);
+        document.getElementById('problem-type').value        = '';
+        document.getElementById('problem-description').value = '';
+        alert(`Заявка №${newRequest.id} создана успешно!`);
+        showSection('my-requests');
+        await loadUserRequests();
+    } catch (error) {
+        alert('Ошибка создания заявки: ' + error.message);
+    }
+}
+
+        
+        // Показать/скрыть секции
+        function showSection(sectionId) {
+            document.querySelectorAll('.section').forEach(section => {
+                section.classList.add('hidden');
+            });
+            
+            document.getElementById(sectionId).classList.remove('hidden');
+        }
+        
+        // Получить название типа проблемы
+        function getProblemTypeName(type) {
+            const types = {
+                'plumbing': 'Сантехника',
+                'electricity': 'Электрика',
+                'elevator': 'Лифт',
+                'cleaning': 'Уборка',
+                'heating': 'Отопление',
+                'other': 'Другое'
+            };
+            return types[type] || type;
+        }
+        
+        // Получить название статуса
+        function getStatusName(status) {
+            const statuses = {
+                'new': 'Новая',
+                'assigned': 'Назначена',
+                'in_progress': 'В работе',
+                'completed': 'Выполнено',
+                'cancelled': 'Отменена'
+            };
+            return statuses[status] || status;
+        }
+        
+        // Получить название роли
+        function getRoleName(role) {
+            const roles = {
+                'client': 'Клиент',
+                'executor': 'Исполнитель',
+                'manager': 'Руководитель',
+                'admin': 'Администратор'
+            };
+            return roles[role] || role;
+        }
+        
+        // Выход
+        function logout() {
+            api.removeToken();
+            window.location.href = 'index.html';
+        }
+        
+        // Инициализация при загрузке
+        document.addEventListener('DOMContentLoaded', async function() {
+            if (await checkAuth()) {
+                await loadUserData();
+            }
+        });
+        // Открыть прогресс заявки
+async function openProgress(requestId, description, status) {
+    document.getElementById('pm-title').textContent  = `Заявка #${requestId}`;
+    document.getElementById('pm-desc').textContent   = description;
+    document.getElementById('pm-status').textContent = `Статус: ${STATUS_LABELS[status] || status}`;
+    document.getElementById('pm-timeline').innerHTML = '<div class="empty-state">Загрузка...</div>';
+    document.getElementById('progress-modal').style.display = 'block';
+    try {
+        const stages = await api.getRequestStages(requestId);
+        renderTimeline(stages);
+    } catch (e) {
+        document.getElementById('pm-timeline').innerHTML =
+            '<div class="empty-state">Этапы ещё не назначены</div>';
+    }
+}
+
+function renderTimeline(stages) {
+    const el = document.getElementById('pm-timeline');
+    if (!stages.length) {
+        el.innerHTML = '<div class="empty-state">Этапы ещё не назначены</div>';
+        return;
+    }
+    el.innerHTML = stages.map(s => {
+        const dotCls = s.status === 'completed' ? 'done'
+                     : s.status === 'in_progress' ? 'active' : 'pending';
+        const label  = s.status === 'completed' ? '✅ Завершён'
+                     : s.status === 'in_progress' ? '🔄 В работе' : '⏳ Ожидает';
+        return `
+        <div class="tl-item">
+            <div class="tl-dot ${dotCls}"></div>
+            <div class="tl-title">Этап ${s.order_num}. ${s.description}</div>
+            <div class="tl-meta">
+                ${s.executor ? `👷 ${s.executor.fullname}` : '⚠ Исполнитель не назначен'}
+                ${s.deadline ? ` · 📅 до ${new Date(s.deadline).toLocaleDateString('ru-RU')}` : ''}
+                · ${label}
+            </div>
+            ${s.completed_at
+                ? `<div class="tl-time">✓ Выполнено ${new Date(s.completed_at).toLocaleString('ru-RU')}</div>`
+                : ''}
+        </div>`;
+    }).join('');
+}
+
+function closeProgressModal() {
+    document.getElementById('progress-modal').style.display = 'none';
+}
+
+// Закрытие по фону
+document.getElementById('progress-modal').addEventListener('click', function(e) {
+    if (e.target === this) closeProgressModal();
+});
+
+    </script>
+</body>
+</html>
