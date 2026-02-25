@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Система "АМ Заявка" - Вход</title>
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Arial', sans-serif;
+            background: linear-gradient(135deg, #acbaf8 0%, #b2f3f8 100%);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+        }
+        
+        .container {
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+            overflow: hidden;
+            width: 100%;
+            max-width: 400px;
+        }
+        
+        .header {
+            background: #2c3e50;
+            color: white;
+            text-align: center;
+            padding: 25px;
+        }
+        
+        .header h1 {
+            margin: 0;
+            font-size: 24px;
+        }
+        
+        .header p {
+            margin: 10px 0 0;
+            opacity: 0.8;
+            font-size: 14px;
+        }
+        
+        .form-container {
+            padding: 30px;
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: #333;
+            font-weight: bold;
+            font-size: 14px;
+        }
+        
+        input[type="text"],
+        input[type="password"] {
+            width: 100%;
+            padding: 12px 15px;
+            border: 2px solid #e1e5eb;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: border-color 0.3s;
+        }
+        
+        input[type="text"]:focus,
+        input[type="password"]:focus {
+            outline: none;
+            border-color: #3498db;
+        }
+        
+        .btn {
+            width: 100%;
+            padding: 14px;
+            background: #3498db;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background 0.3s;
+            margin-top: 10px;
+        }
+        
+        .btn:hover {
+            background: #2980b9;
+        }
+        
+        .btn-secondary {
+            background: #95a5a6;
+        }
+        
+        .btn-secondary:hover {
+            background: #7f8c8d;
+        }
+        
+        .link {
+            text-align: center;
+            margin-top: 20px;
+            color: #666;
+        }
+        
+        .link a {
+            color: #3498db;
+            text-decoration: none;
+            font-weight: bold;
+        }
+        
+        .link a:hover {
+            text-decoration: underline;
+        }
+        
+        .error-message {
+            background: #ffeaea;
+            color: #c0392b;
+            padding: 10px;
+            border-radius: 6px;
+            margin-bottom: 15px;
+            font-size: 14px;
+            display: none;
+        }
+        
+        .success-message {
+            background: #e8f6f3;
+            color: #27ae60;
+            padding: 10px;
+            border-radius: 6px;
+            margin-bottom: 15px;
+            font-size: 14px;
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Система "АМ Заявки"</h1>
+            <p>Система управления заявками</p>
+        </div>
+        
+        <!-- Форма входа -->
+        <div class="form-container" id="login-form">
+            <div class="error-message" id="login-error">Неверный логин или пароль!</div>
+            <div class="success-message" id="register-success">Регистрация успешна! Теперь войдите в систему.</div>
+            
+            <div class="form-group">
+                <label for="login-username">Логин (телефон)</label>
+                <input type="text" id="login-username" placeholder="Введите телефон (например, 79161234567)">
+            </div>
+            
+            <div class="form-group">
+                <label for="login-password">Пароль</label>
+                <input type="password" id="login-password" placeholder="Введите пароль">
+            </div>
+            
+            <button class="btn" onclick="login()">Войти в систему</button>
+            
+            <div class="link">
+                Нет аккаунта? <a href="#" onclick="showRegisterForm()">Зарегистрироваться</a>
+            </div>
+        </div>
+        
+        <!-- Форма регистрации (изначально скрыта) -->
+        <div class="form-container" id="register-form" style="display: none;">
+            <div class="error-message" id="register-error">Пользователь с таким телефоном уже существует!</div>
+            
+            <h3 style="margin-top: 0; text-align: center;">Регистрация нового пользователя</h3>
+            
+            <div class="form-group">
+                <label for="reg-username">Логин (телефон)*</label>
+                <input type="text" id="reg-username" placeholder="79161234567">
+            </div>
+            
+            <div class="form-group">
+                <label for="reg-password">Пароль*</label>
+                <input type="password" id="reg-password" placeholder="Придумайте пароль">
+            </div>
+            
+            <div class="form-group">
+                <label for="reg-fullname">ФИО*</label>
+                <input type="text" id="reg-fullname" placeholder="Иванов Иван Иванович">
+            </div>
+            
+            <div class="form-group">
+                <label for="reg-address">Адрес*</label>
+                <input type="text" id="reg-address" placeholder="ул. Ленина, д. 10, кв. 45">
+            </div>
+            
+            <button class="btn" onclick="register()">Зарегистрироваться</button>
+            <button class="btn btn-secondary" onclick="showLoginForm()">Назад к входу</button>
+            
+            <div class="link">
+                <small>* — все поля обязательны для заполнения</small>
+            </div>
+        </div>
+    </div>
+
+    <script src="api.js"></script>
+    <script>
+        function showRegisterForm() {
+            document.getElementById('login-form').style.display = 'none';
+            document.getElementById('register-form').style.display = 'block';
+            document.getElementById('login-error').style.display = 'none';
+            document.getElementById('register-error').style.display = 'none';
+            document.getElementById('register-success').style.display = 'none';
+        }
+        
+        function showLoginForm() {
+            document.getElementById('login-form').style.display = 'block';
+            document.getElementById('register-form').style.display = 'none';
+            document.getElementById('login-error').style.display = 'none';
+            document.getElementById('register-error').style.display = 'none';
+        }
+        
+        async function register() {
+            const username = document.getElementById('reg-username').value.trim();
+            const password = document.getElementById('reg-password').value.trim();
+            const fullname = document.getElementById('reg-fullname').value.trim();
+            const address = document.getElementById('reg-address').value.trim();
+            
+            if (!username || !password || !fullname || !address) {
+                document.getElementById('register-error').textContent = 'Заполните все поля!';
+                document.getElementById('register-error').style.display = 'block';
+                return;
+            }
+            
+            if (!/^\d{11}$/.test(username)) {
+                document.getElementById('register-error').textContent = 'Телефон должен содержать 11 цифр!';
+                document.getElementById('register-error').style.display = 'block';
+                return;
+            }
+            
+            try {
+                await api.register(username, password, fullname, address);
+                
+                document.getElementById('register-success').style.display = 'block';
+                document.getElementById('register-error').style.display = 'none';
+                
+                document.getElementById('reg-username').value = '';
+                document.getElementById('reg-password').value = '';
+                document.getElementById('reg-fullname').value = '';
+                document.getElementById('reg-address').value = '';
+                
+                setTimeout(() => {
+                    showLoginForm();
+                    document.getElementById('register-success').style.display = 'none';
+                }, 2000);
+            } catch (error) {
+                document.getElementById('register-error').textContent = error.message || 'Ошибка регистрации';
+                document.getElementById('register-error').style.display = 'block';
+            }
+        }
+        
+        async function login() {
+            const username = document.getElementById('login-username').value.trim();
+            const password = document.getElementById('login-password').value.trim();
+            
+            try {
+                await api.login(username, password);
+                const user = await api.getCurrentUser();
+                
+                document.getElementById('login-error').style.display = 'none';
+                redirectByRole(user.role);
+            } catch (error) {
+                document.getElementById('login-error').style.display = 'block';
+            }
+        }
+        
+        function redirectByRole(role) {
+            switch(role) {
+                case 'admin':
+                    window.location.href = 'admin.html';
+                    break;
+                case 'client':
+                    window.location.href = 'client.html';
+                    break;
+                case 'executor':
+                    window.location.href = 'executor.html';
+                    break;
+                case 'manager':
+                    window.location.href = 'manager.html';
+                    break;
+                default:
+                    window.location.href = 'client.html';
+            }
+        }
+        
+        document.addEventListener('DOMContentLoaded', async function() {
+            if (api.getToken()) {
+                try {
+                    const user = await api.getCurrentUser();
+                    redirectByRole(user.role);
+                } catch (error) {
+                    api.removeToken();
+                }
+            }
+        });
+    </script>
+</body>
+</html>
