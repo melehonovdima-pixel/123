@@ -255,12 +255,21 @@
     <div id="profile" class="section hidden">
         <h3>Мой профиль</h3>
         <div class="profile-info">
-            <p><strong>ФИО:</strong> <span id="profile-fullname"></span></p>
             <p><strong>Телефон:</strong> <span id="profile-phone"></span></p>
-            <p><strong>Адрес:</strong> <span id="profile-address"></span></p>
             <p><strong>Роль в системе:</strong> <span id="profile-role"></span> <span id="profile-role-badge" class="user-role"></span></p>
             <p><strong>Дата регистрации:</strong> <span id="profile-regdate"></span></p>
             <p><strong>Статус:</strong> <span id="profile-status"></span></p>
+        </div>
+        <h4 style="margin-top:20px;">Редактировать данные</h4>
+        <div style="max-width:400px;">
+            <label>ФИО:</label>
+            <input type="text" id="profile-fullname">
+            <label>Адрес:</label>
+            <input type="text" id="profile-address">
+            <label>Новый пароль (оставьте пустым, чтобы не менять):</label>
+            <input type="password" id="profile-password" placeholder="Новый пароль">
+            <button onclick="saveClientProfile()">Сохранить изменения</button>
+            <span id="profile-saved" style="color:#27ae60;font-size:13px;margin-left:10px;display:none;">✓ Сохранено</span>
         </div>
     </div>
 
@@ -305,9 +314,9 @@
                     ${currentUser.address || ''}
                 `;
                 
-                document.getElementById('profile-fullname').textContent = currentUser.fullname;
+                document.getElementById('profile-fullname').value = currentUser.fullname;
                 document.getElementById('profile-phone').textContent = currentUser.username;
-                document.getElementById('profile-address').textContent = currentUser.address || '';
+                document.getElementById('profile-address').value = currentUser.address || '';
                 document.getElementById('profile-role').textContent = getRoleName(currentUser.role);
                 document.getElementById('profile-role-badge').textContent = currentUser.role;
                 document.getElementById('profile-regdate').textContent = 
@@ -430,6 +439,30 @@ async function createRequest() {
             return roles[role] || role;
         }
         
+        // Сохранить профиль клиента
+        async function saveClientProfile() {
+            const data = {};
+            const fullname = document.getElementById('profile-fullname').value.trim();
+            const address  = document.getElementById('profile-address').value.trim();
+            const password = document.getElementById('profile-password').value;
+            if (fullname) data.fullname = fullname;
+            if (address)  data.address  = address;
+            if (password) data.password = password;
+            if (!Object.keys(data).length) return;
+            try {
+                const user = await api.getCurrentUser();
+                const updated = await api.updateProfile(user.id, data);
+                document.getElementById('current-user-info').innerHTML = `
+                    ${updated.fullname} <span class="user-role">${getRoleName(updated.role)}</span><br>
+                    ${updated.address || ''}
+                `;
+                document.getElementById('profile-password').value = '';
+                const badge = document.getElementById('profile-saved');
+                badge.style.display = 'inline';
+                setTimeout(() => badge.style.display = 'none', 2000);
+            } catch (e) { alert('Ошибка сохранения: ' + e.message); }
+        }
+
         // Выход
         function logout() {
             api.removeToken();

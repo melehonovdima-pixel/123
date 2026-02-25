@@ -226,6 +226,14 @@ async getExecutorStats() {
             body: JSON.stringify({ value })
         });
     }
+
+    // Profile
+    async updateProfile(userId, data) {
+        return this.request(`/api/users/${userId}`, {
+            method: 'PUT',
+            body: JSON.stringify(data)
+        });
+    }
 }
 
 

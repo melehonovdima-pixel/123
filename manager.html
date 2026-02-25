@@ -256,6 +256,7 @@
         <button onclick="showSection('requests', this)"> Все заявки</button>
         <button onclick="showSection('report', this)"> Отчёт</button>
         <button onclick="showSection('executors', this)"> Исполнители</button>
+        <button onclick="showSection('profile', this)"> Мой профиль</button>
         <button class="logout-btn" onclick="logout()">Выйти</button>
     </div>
 
@@ -411,6 +412,33 @@
         <h2 style="margin:0 0 15px;color:#2c3e50;">👷 Список исполнителей</h2>
         <div id="executors-list">
             <div class="empty-state">Загрузка...</div>
+        </div>
+    </div>
+
+    <!-- ===== МОЙ ПРОФИЛЬ ===== -->
+    <div id="section-profile" class="section">
+        <h2 style="margin:0 0 20px;color:#2c3e50;">Мой профиль</h2>
+        <div style="max-width:500px;">
+            <div style="background:#f8f9fa;padding:15px;border-radius:8px;margin-bottom:20px;">
+                <p style="margin:8px 0;"><strong>Телефон:</strong> <span id="prof-phone"></span></p>
+                <p style="margin:8px 0;"><strong>Роль:</strong> <span id="prof-role"></span></p>
+                <p style="margin:8px 0;"><strong>Дата регистрации:</strong> <span id="prof-regdate"></span></p>
+                <p style="margin:8px 0;"><strong>Статус:</strong> <span id="prof-status"></span></p>
+            </div>
+            <div style="margin-bottom:15px;">
+                <label style="font-size:13px;color:#636e72;display:block;margin-bottom:4px;">ФИО</label>
+                <input type="text" id="prof-fullname" style="width:100%;padding:8px;border-radius:5px;border:1px solid #ddd;">
+            </div>
+            <div style="margin-bottom:15px;">
+                <label style="font-size:13px;color:#636e72;display:block;margin-bottom:4px;">Адрес</label>
+                <input type="text" id="prof-address" style="width:100%;padding:8px;border-radius:5px;border:1px solid #ddd;">
+            </div>
+            <div style="margin-bottom:15px;">
+                <label style="font-size:13px;color:#636e72;display:block;margin-bottom:4px;">Новый пароль (оставьте пустым, чтобы не менять)</label>
+                <input type="password" id="prof-password" placeholder="Новый пароль" style="width:100%;padding:8px;border-radius:5px;border:1px solid #ddd;">
+            </div>
+            <button onclick="saveProfile()" style="background:#00b894;padding:10px 24px;">Сохранить изменения</button>
+            <span id="prof-saved" style="color:#00b894;font-size:13px;margin-left:10px;display:none;">✓ Сохранено</span>
         </div>
     </div>
 
@@ -864,6 +892,7 @@ function logout() {
 // ===== Инициализация =====
 document.addEventListener('DOMContentLoaded', async () => {
     if (!await checkAuth()) return;
+    loadProfile();
     await loadAll();
     startAutoRefresh();
 });
@@ -903,6 +932,10 @@ function renderStagesList(stages) {
     const STAGE_COLOR  = { pending:'#f8f9fa',    in_progress:'#e3f2fd',      completed:'#e8f5e9' };
     const STAGE_BORDER = { pending:'#ddd',        in_progress:'#74b9ff',      completed:'#00b894' };
 
+    const execOptions = allExecutors.map(e =>
+        `<option value="${e.id}">${e.fullname}</option>`
+    ).join('');
+
     el.innerHTML = stages.map(s => `
     <div style="display:flex; align-items:flex-start; gap:10px;
                 background:${STAGE_COLOR[s.status]};
@@ -912,8 +945,16 @@ function renderStagesList(stages) {
         <span style="font-weight:800; font-size:18px; color:#7f8c8d; flex-shrink:0;">${s.order_num}.</span>
         <div style="flex:1;">
             <div style="font-weight:600; font-size:14px;">${s.description}</div>
-            <div style="font-size:12px; color:#636e72; margin-top:4px; display:flex; gap:12px; flex-wrap:wrap;">
-                <span>👷 ${s.executor ? s.executor.fullname : '⚠ Не назначен'}</span>
+            <div style="font-size:12px; color:#636e72; margin-top:4px; display:flex; gap:12px; flex-wrap:wrap; align-items:center;">
+                <span>👷
+                    <select onchange="reassignStageExecutor(${s.id}, this.value)"
+                            style="font-size:12px; padding:2px 4px; border-radius:4px; border:1px solid #ccc;">
+                        <option value="">— не назначен —</option>
+                        ${allExecutors.map(e =>
+                            `<option value="${e.id}" ${s.executor && s.executor.id === e.id ? 'selected' : ''}>${e.fullname}</option>`
+                        ).join('')}
+                    </select>
+                </span>
                 ${s.deadline ? `<span>📅 ${new Date(s.deadline).toLocaleString('ru-RU')}</span>` : ''}
                 <span>${STAGE_STATUS[s.status]}</span>
                 ${s.completed_at ? `<span>✓ завершён ${new Date(s.completed_at).toLocaleString('ru-RU')}</span>` : ''}
@@ -992,6 +1033,51 @@ async function saveRequestMeta() {
 document.getElementById('stages-modal').addEventListener('click', function(e) {
     if (e.target === this) closeModal();
 });
+
+// ===== Переназначить исполнителя этапа =====
+async function reassignStageExecutor(stageId, executorId) {
+    try {
+        await api.updateStage(stageId, {
+            executor_id: executorId ? parseInt(executorId) : null
+        });
+        // Перезагружаем этапы в модалке
+        const req = await api.getRequestWithStages(currentModalRequestId);
+        renderStagesList(req.stages);
+    } catch (e) { alert('Ошибка назначения: ' + e.message); }
+}
+
+// ===== Профиль =====
+function loadProfile() {
+    if (!currentUser) return;
+    document.getElementById('prof-phone').textContent   = currentUser.username;
+    document.getElementById('prof-role').textContent     = currentUser.role === 'manager' ? 'Руководитель' : 'Администратор';
+    document.getElementById('prof-regdate').textContent  = new Date(currentUser.created_at).toLocaleDateString('ru-RU');
+    document.getElementById('prof-status').textContent   = currentUser.is_active ? 'Активен ✓' : 'Заблокирован ✗';
+    document.getElementById('prof-fullname').value       = currentUser.fullname || '';
+    document.getElementById('prof-address').value        = currentUser.address || '';
+    document.getElementById('prof-password').value       = '';
+}
+
+async function saveProfile() {
+    const data = {};
+    const fullname = document.getElementById('prof-fullname').value.trim();
+    const address  = document.getElementById('prof-address').value.trim();
+    const password = document.getElementById('prof-password').value;
+    if (fullname) data.fullname = fullname;
+    if (address)  data.address  = address;
+    if (password) data.password = password;
+    if (!Object.keys(data).length) return;
+    try {
+        const updated = await api.updateProfile(currentUser.id, data);
+        currentUser = updated;
+        document.getElementById('manager-name').textContent  = updated.fullname;
+        document.getElementById('avatar-letter').textContent = updated.fullname.charAt(0).toUpperCase();
+        document.getElementById('prof-password').value = '';
+        const badge = document.getElementById('prof-saved');
+        badge.style.display = 'inline';
+        setTimeout(() => badge.style.display = 'none', 2000);
+    } catch (e) { alert('Ошибка сохранения: ' + e.message); }
+}
 
 
 </script>

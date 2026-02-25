@@ -203,6 +203,7 @@
         <button class="active" onclick="showSection('dashboard', this)"> Дашборд</button>
         <button onclick="showSection('tasks', this)">Текущие задачи ...</button>
 <button onclick="showSection('done', this)">Выполненные</button>
+        <button onclick="showSection('profile', this)">Мой профиль</button>
         <button class="logout-btn" onclick="logout()">Выйти</button>
     </div>
 
@@ -287,6 +288,33 @@
                 <tr><td colspan="4" class="empty-state">Загрузка...</td></tr>
             </tbody>
         </table>
+    </div>
+
+    <!-- ===== СЕКЦИЯ: МОЙ ПРОФИЛЬ ===== -->
+    <div id="section-profile" class="section">
+        <h2 style="margin:0 0 20px;color:#2c3e50;">Мой профиль</h2>
+        <div style="max-width:500px;">
+            <div style="background:#f8f9fa;padding:15px;border-radius:8px;margin-bottom:20px;">
+                <p style="margin:8px 0;"><strong>Телефон:</strong> <span id="prof-phone"></span></p>
+                <p style="margin:8px 0;"><strong>Роль:</strong> <span id="prof-role"></span></p>
+                <p style="margin:8px 0;"><strong>Дата регистрации:</strong> <span id="prof-regdate"></span></p>
+                <p style="margin:8px 0;"><strong>Статус:</strong> <span id="prof-status"></span></p>
+            </div>
+            <div style="margin-bottom:15px;">
+                <label style="font-size:13px;color:#636e72;display:block;margin-bottom:4px;">ФИО</label>
+                <input type="text" id="prof-fullname" style="width:100%;padding:8px;border-radius:5px;border:1px solid #ddd;">
+            </div>
+            <div style="margin-bottom:15px;">
+                <label style="font-size:13px;color:#636e72;display:block;margin-bottom:4px;">Адрес</label>
+                <input type="text" id="prof-address" style="width:100%;padding:8px;border-radius:5px;border:1px solid #ddd;">
+            </div>
+            <div style="margin-bottom:15px;">
+                <label style="font-size:13px;color:#636e72;display:block;margin-bottom:4px;">Новый пароль (оставьте пустым, чтобы не менять)</label>
+                <input type="password" id="prof-password" placeholder="Новый пароль" style="width:100%;padding:8px;border-radius:5px;border:1px solid #ddd;">
+            </div>
+            <button onclick="saveProfile()" style="background:#00b894;padding:10px 24px;">Сохранить изменения</button>
+            <span id="prof-saved" style="color:#00b894;font-size:13px;margin-left:10px;display:none;">✓ Сохранено</span>
+        </div>
     </div>
 
 </div><!-- /container -->
@@ -578,6 +606,39 @@ async function loadDoneStages() {
     } catch (e) { console.error('Ошибка загрузки завершённых:', e); }
 }
 
+// ===== Профиль =====
+function loadProfile() {
+    if (!currentUser) return;
+    document.getElementById('prof-phone').textContent   = currentUser.username;
+    document.getElementById('prof-role').textContent     = 'Исполнитель';
+    document.getElementById('prof-regdate').textContent  = new Date(currentUser.created_at).toLocaleDateString('ru-RU');
+    document.getElementById('prof-status').textContent   = currentUser.is_active ? 'Активен ✓' : 'Заблокирован ✗';
+    document.getElementById('prof-fullname').value       = currentUser.fullname || '';
+    document.getElementById('prof-address').value        = currentUser.address || '';
+    document.getElementById('prof-password').value       = '';
+}
+
+async function saveProfile() {
+    const data = {};
+    const fullname = document.getElementById('prof-fullname').value.trim();
+    const address  = document.getElementById('prof-address').value.trim();
+    const password = document.getElementById('prof-password').value;
+    if (fullname) data.fullname = fullname;
+    if (address)  data.address  = address;
+    if (password) data.password = password;
+    if (!Object.keys(data).length) return;
+    try {
+        const updated = await api.updateProfile(currentUser.id, data);
+        currentUser = updated;
+        document.getElementById('executor-name').textContent  = updated.fullname;
+        document.getElementById('avatar-letter').textContent = updated.fullname.charAt(0).toUpperCase();
+        document.getElementById('prof-password').value = '';
+        const badge = document.getElementById('prof-saved');
+        badge.style.display = 'inline';
+        setTimeout(() => badge.style.display = 'none', 2000);
+    } catch (e) { alert('Ошибка сохранения: ' + e.message); }
+}
+
 // ===== Автообновление каждые 30 сек =====
 function startAutoRefresh() {
     refreshInterval = setInterval(loadAll, 30000);
@@ -592,6 +653,7 @@ function logout() {
 // ===== Инициализация =====
 document.addEventListener('DOMContentLoaded', async () => {
     if (!await checkAuth()) return;
+    loadProfile();
     await loadAll();
     startAutoRefresh();
 });
